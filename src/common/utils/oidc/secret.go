@@ -79,6 +79,12 @@ func (dm *defaultManager) VerifySecret(ctx context.Context, username string, sec
 	if err != nil {
 		return nil, fmt.Errorf("failed to load the key for encryption/decryption： %v", err)
 	}
+	// fallback to user password
+	if oidcUser.PlainSecret == "" && user.Password != "" {
+		if utils.Encrypt(secret, user.Salt, user.PasswordVersion) == user.Password {
+			return user, nil
+		}
+	}
 	plainSecret, err := utils.ReversibleDecrypt(oidcUser.Secret, key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt secret from DB: %v", err)
